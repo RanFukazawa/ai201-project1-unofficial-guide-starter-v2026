@@ -82,22 +82,38 @@ def fallback_split(
 
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
-
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
-
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
-
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    Splits on paragraph breaks first, merging paragraphs until close to
+    CHUNK_SIZE. Falls back to a straight character cut only if a single
+    paragraph alone exceeds CHUNK_SIZE.
     """
-    return fallback_split(documents)
+    chunk_size = config.CHUNK_SIZE
+    chunks: list[Chunk] = []
+
+    for doc in documents:
+        paragraphs = [p.strip() for p in doc.text.split("\n\n") if p.strip()]
+        index = 0
+        current = ""
+
+        for para in paragraphs:
+            candidate = f"{current}\n\n{para}" if current else para
+            if len(candidate) <= chunk_size:
+                current = candidate
+            else:
+                if current:
+                    chunks.append(Chunk(
+                        text=current, source=doc.source, index=index,
+                        produced_by="chunker.py::split_documents",
+                    ))
+                    index += 1
+                current = para
+
+        if current:
+            chunks.append(Chunk(
+                text=current, source=doc.source, index=index,
+                produced_by="chunker.py::split_documents",
+            ))
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
