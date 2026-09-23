@@ -58,6 +58,10 @@ in at least 4 of 5 tries.
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
 
+My Milestone 4 distances showed a clean gap with no overlap — in-corpus questions
+ranged 0.195–0.425, out-of-scope ranged 0.825–0.934 — so I'd expect the gate to 
+refuse all 5, not just 4.
+
 ---
 
 ## 4. Something about your chunks
