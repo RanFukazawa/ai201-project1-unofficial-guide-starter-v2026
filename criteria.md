@@ -23,8 +23,10 @@ For at least 4 of my 5 test questions, the retrieved chunks include one that
 contains the answer.
 
 **Why this target:**
-<!-- e.g. "One of my questions is about a topic only two documents mention, so
-     I expect that one to be hard." -->
+
+I expect at least one of my five questions to be harder than the rest (e.g. a 
+topic covered by only one or two documents), so I'm not requiring a perfect 5 
+of 5.
 
 ---
 
@@ -33,8 +35,11 @@ contains the answer.
 Every answer the system produces names at least one source document.
 
 **Why this target:**
-<!-- Why all five and not four? What about your setup makes that achievable —
-     or what would have to go wrong for it not to be? -->
+
+Every retrieved chunk always carries its own source filename, and generate.py 
+has access to that metadata for every chunk it's given — there's no path where 
+an answer is produced without a source attached, so I expect this one to hold 
+at 5 of 5 with no exceptions.
 
 ---
 
@@ -57,41 +62,29 @@ in at least 4 of 5 tries.
 
 ## 4. Something about your chunks
 
-<!-- YOU WRITE THIS ONE.
-
-     How would you know if your chunks were the right size? Name something
-     countable or observable.
-
-     Examples of the right shape — don't copy these, they should come from
-     what you actually saw in Milestone 3:
-       - "At least 4 of 5 sampled chunks read as a complete thought, with no
-          sentence cut in half at either end."
-       - "No chunk is shorter than 200 characters, since anything below that
-          in my corpus turned out to be a heading with no content under it." -->
-
-
+My chosen CHUNK_SIZE is 600 characters, which is longer than the longest document 
+in my corpus (554 characters, housing_old_brewhouse.txt), confirmed by checking 
+the length of all 88 documents rather than a sample.
 
 **Why this target:**
 
-
+No document in my corpus mixes two topics, and the longest is only 554 characters, 
+so a chunk size at or above that should never split a document mid-thought.
 
 ---
 
 ## 5. Your choice
 
-<!-- YOU WRITE THIS ONE TOO.
-
-     Pick something you actually care about getting right. It could be about
-     speed, about refusals, about a particular kind of question your corpus
-     handles badly, about source attribution being correct rather than merely
-     present — anything, as long as it names a number or an observable
-     outcome. -->
-
-
+For at least 4 of 5 test questions about a dining hall that has both an original and
+a followup document, the answer cites the source document that actually matches the 
+hall asked about — not a mismatched or unrelated pair.
 
 **Why this target:**
 
-
+My corpus has several dining halls with near-duplicate original + followup docs 
+(same wait times, same details, reworded). I want to know my system pulls the right 
+hall's source, not just a plausible-looking one, since these pairs are similar enough 
+that retrieval could get confused between them.
 
 ---
 
