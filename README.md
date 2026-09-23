@@ -28,10 +28,21 @@
 
      Milestone 5. -->
 
+The Unofficial Guide answers plain-English questions about campus life using
+the informal, student-written knowledge that never makes it onto the official
+university website. I used the `campus_life` corpus — 88 short documents, one
+topic per file, covering things like course workloads and exam formats, dining
+hall wait times and hours, dorm noise levels and laundry setups, and campus
+policies like add/drop deadlines and the housing lottery. Someone can ask
+something like "How noisy is Innisfree Hall?" or "How often does the campus
+shuttle run on weekdays?" and get back a short, sourced answer drawn from the
+matching document — or a clear refusal if the question falls outside what the
+corpus covers.
+
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** 600 characters
+**Overlap:** 100 characters
 
 <!-- What about YOUR documents made you pick these numbers? Short posts and
      long sectioned guides don't want the same chunking, and "800 seemed
@@ -42,6 +53,22 @@
      more than pretending you got it right first time.
 
      Milestone 3. -->
+
+I checked the length of all 88 documents in my corpus before picking a number,
+rather than guessing. The longest document (`housing_old_brewhouse.txt`) is
+554 characters, and I confirmed no document mixes two separate, unrelated
+topics — each one is a single self-contained thought (one dorm's noise, one
+course's workload). So I set `CHUNK_SIZE` to 600, comfortably above my actual
+maximum, meaning no document in my corpus is ever split. Overlap has no real
+effect here for the same reason — there's never a second chunk for it to
+bridge — so 100 is a valid but functionally inert setting given my data.
+
+I replaced the starter's `fallback_split` body in `split_documents` with
+paragraph-aware merging logic (combining paragraphs up to the size limit,
+falling back to a raw character cut only if a single paragraph alone exceeds
+it), even knowing it wouldn't visibly change my output — I wanted the function
+to behave correctly if this corpus ever grows to include a longer document,
+rather than relying on a coincidence of my current document lengths.
 
 ## Sample Chunks
 
@@ -115,7 +142,15 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
 
 **Question:**
 
+If I drop a course after the second week, will it show up on my transcript?
+
 **Answer:**
+
+```
+Yes, dropping a course after the second week shows as a W on your transcript.
+
+Source: admin_add_drop_deadline.txt
+```
 
 ```
 ```
@@ -130,10 +165,27 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
      here — the table below wants all ten rows.
 
      Milestone 4. -->
+My relevance cutoff: 0.6
+
+I measured 5 in-corpus and 5 out-of-scope questions. In-corpus best distances 
+ranged 0.195–0.425; out-of-scope ranged 0.825–0.934 — a clean gap with no overlap. 
+I set the cutoff at 0.6, roughly centered in that gap, which also matches the 
+starter's default. My closest in-corpus question (the shuttle, at 0.425) was 
+noticeably nearer the boundary than the rest, likely because its phrasing ("how 
+often," "weekdays") is more generic than my other four, more topic-specific questions.
 
 | Question | In corpus? | Best distance |
 |---|---|---|
-|  |  |  |
+| If I drop a course after the second week, will it show up on my transcript? | yes | 0.254 |
+| How many hours a week should I expect to spend on MATH 220 Linear Algebra? | yes | 0.195 |
+| What are the wait times like at The Ridgeway Café around lunch? | yes | 0.201 |
+| How noisy is Innisfree Hall? | yes | 0.272 |
+| How often does the campus shuttle run on weekdays? | yes | 0.425 |
+| What is the capital of Mongolia? | no | 0.825 |
+| How do I change the oil in a diesel engine? | no | 0.934 |
+| Who won the 1994 World Cup? | no | 0.886 |
+| What is the recommended dosage of ibuprofen for a headache? | no | 0.844 |
+| How do I write a for loop in Rust? | no | 0.896 |
 
 ## How I Used AI
 
@@ -147,8 +199,10 @@ Laundry costs $1.75 wash, $1.75 dry, app-based. On noise: moderate; the building
      Milestone 5. -->
 
 **1.**
+I asked Claude to help me write the chunking logic for split_documents in Milestone 3. It gave me a paragraph-based merging function that keeps combining paragraphs until adding the next one would exceed CHUNK_SIZE, falling back to a raw character cut only if a single paragraph alone is too long. I kept the logic mostly as given, but I had to decide what CHUNK_SIZE itself should be — I checked all 88 documents' lengths myself first (longest was 554 characters) and set it to 600, since Claude wouldn't pick that number for me.
 
 **2.**
+I asked Claude to help me figure out my acceptance criteria for Milestone 2, criteria 4 and 5. It refused to write the criteria outright — the assignment explicitly says not to have AI write these — but it pushed back and asked me questions instead, like whether a criterion I was drafting could actually fail given my data. That's how I realized my first idea for criterion 4 (about chunks splitting correctly) couldn't ever fail, since none of my 88 documents are long enough to trigger a split in the first place. I ended up writing criterion 4 around my CHUNK_SIZE choice being defensible against my longest document instead, and picked criterion 5 (source correctness on my dining hall original/followup pairs) myself once I understood what would make a criterion meaningful.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
