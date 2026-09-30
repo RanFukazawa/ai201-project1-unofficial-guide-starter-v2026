@@ -231,15 +231,52 @@ I asked Claude to help me figure out my acceptance criteria for Milestone 2, cri
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. CHUNK_SIZE (600) exceeds longest document (554 chars) | 600 ≥ 554 | ✓ | ✓ | ✓ | MET |
+| 5. Correct source attribution on original/followup pairs | 4 of 5 | 5/5 (single pass) | 5/5 (single pass) | 5/5 (single pass) | MET |
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
      Name the file and function that produced it. -->
+If I drop a course after the second week, will it show up on my transcript?
+  run 1: pass  (best distance 0.254)
+  run 2: pass  (best distance 0.254)
+  run 3: pass  (best distance 0.254)
+
+How many hours a week should I expect to spend on MATH 220 Linear Algebra?
+  run 1: pass  (best distance 0.195)
+  run 2: pass  (best distance 0.195)
+  run 3: pass  (best distance 0.195)
+
+What are the wait times like at The Ridgeway Café around lunch?
+  run 1: pass  (best distance 0.201)
+  run 2: pass  (best distance 0.201)
+  run 3: pass  (best distance 0.201)
+
+How noisy is Innisfree Hall?
+  run 1: pass  (best distance 0.272)
+  run 2: pass  (best distance 0.272)
+  run 3: pass  (best distance 0.272)
+
+How often does the campus shuttle run on weekdays?
+  run 1: pass  (best distance 0.425)
+  run 2: pass  (best distance 0.425)
+  run 3: pass  (best distance 0.425)
+
+Out-of-scope questions (the gate should refuse these):
+  refused  (best distance 0.825)  What is the capital of Mongolia?
+  refused  (best distance 0.934)  How do I change the oil in a diesel engine?
+  refused  (best distance 0.886)  Who won the 1994 World Cup?
+  refused  (best distance 0.844)  What is the recommended dosage of ibuprofen for a headache?
+  refused  (best distance 0.896)  How do I write a for loop in Rust?
+  -> gate refused 5 of 5
+
+Wrote results/run_2026-09-29_2031_before.md
+15 model calls this session, 9809 tokens (9096 in, 713 out)
+
+Commit this file. It's the evidence the run actually happened.
 
 ## Verdicts
 
