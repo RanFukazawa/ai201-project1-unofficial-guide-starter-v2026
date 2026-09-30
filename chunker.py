@@ -83,10 +83,12 @@ def fallback_split(
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
     Splits on paragraph breaks first, merging paragraphs until close to
-    CHUNK_SIZE. Falls back to a straight character cut only if a single
-    paragraph alone exceeds CHUNK_SIZE.
+    CHUNK_SIZE, with CHUNK_OVERLAP characters carried into the next chunk.
+    Falls back to a straight character cut if a single paragraph alone
+    exceeds CHUNK_SIZE.
     """
     chunk_size = config.CHUNK_SIZE
+    overlap = config.CHUNK_OVERLAP
     chunks: list[Chunk] = []
 
     for doc in documents:
@@ -94,24 +96,42 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
         index = 0
         current = ""
 
-        for para in paragraphs:
-            candidate = f"{current}\n\n{para}" if current else para
-            if len(candidate) <= chunk_size:
-                current = candidate
-            else:
-                if current:
-                    chunks.append(Chunk(
-                        text=current, source=doc.source, index=index,
-                        produced_by="chunker.py::split_documents",
-                    ))
-                    index += 1
-                current = para
-
-        if current:
+        def flush(text, src, idx):
+            nonlocal chunks
             chunks.append(Chunk(
-                text=current, source=doc.source, index=index,
+                text=text, source=src, index=idx,
                 produced_by="chunker.py::split_documents",
             ))
+
+        for para in paragraphs:
+            candidate = f"{current}\n\n{para}" if current else para
+
+            if len(candidate) <= chunk_size:
+                current = candidate
+                continue
+
+            if current:
+                flush(current, doc.source, index)
+                index += 1
+                # carry overlap forward into the next chunk
+                current = current[-overlap:] if overlap else ""
+                candidate = f"{current}\n\n{para}" if current else para
+
+            if len(para) > chunk_size:
+                # a single paragraph alone is too big: hard character cut
+                start = 0
+                while start < len(para):
+                    piece = para[start:start + chunk_size].strip()
+                    if piece:
+                        flush(piece, doc.source, index)
+                        index += 1
+                    start += chunk_size - overlap
+                current = ""
+            else:
+                current = candidate
+
+        if current:
+            flush(current, doc.source, index)
 
     return chunks
 

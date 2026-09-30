@@ -204,6 +204,19 @@ I asked Claude to help me write the chunking logic for split_documents in Milest
 **2.**
 I asked Claude to help me figure out my acceptance criteria for Milestone 2, criteria 4 and 5. It refused to write the criteria outright — the assignment explicitly says not to have AI write these — but it pushed back and asked me questions instead, like whether a criterion I was drafting could actually fail given my data. That's how I realized my first idea for criterion 4 (about chunks splitting correctly) couldn't ever fail, since none of my 88 documents are long enough to trigger a split in the first place. I ended up writing criterion 4 around my CHUNK_SIZE choice being defensible against my longest document instead, and picked criterion 5 (source correctness on my dining hall original/followup pairs) myself once I understood what would make a criterion meaningful.
 
+**3.**
+In unit 2, I asked Claude to help me read my before/after run logs and
+figure out what actually changed after I lowered CHUNK_SIZE for the
+chunking experiment. I hadn't noticed on my own that my out-of-scope
+distances had all dropped too (not just my in-corpus ones) — Claude
+pointed out that pattern by comparing the two log files side by side,
+which changed my "Did it help?" writeup from a simple "yes" to something
+that also names the tradeoff. I also asked it to help me write the
+Milestone 3 diagnosis and confirmed myself, by rereading `chunker.py`,
+that the paragraph-overflow fallback and CHUNK_OVERLAP really were dead
+code before accepting that as a real finding rather than taking the
+grader feedback at face value.
+
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never
      claims earns nothing.
@@ -356,7 +369,20 @@ claim I made about my own code, not something my criteria caught.
 
 **What I changed:**
 
+I lowered `CHUNK_SIZE` from 600 to 300 (and `CHUNK_OVERLAP` from 100 to 50),
+and fixed `split_documents` so it actually reads `CHUNK_OVERLAP` and falls
+back to a real character-level cut for an oversized paragraph — neither of
+which the original implementation did, despite my Milestone 3 write-up
+claiming otherwise.
+
 **Why I picked it:**
+
+My Milestone 3 diagnosis (from grader feedback) found that `CHUNK_OVERLAP`
+was dead code and the paragraph-overflow fallback was never exercised or
+verified, because nothing in my corpus was long enough to trigger either
+path. Lowering `CHUNK_SIZE` forces real splitting, which both tests the
+previously-unverified code and directly follows the milestone's own
+"second chunking strategy" option.
 
 <!-- Connect it to a specific diagnosis above in one sentence. If you can't,
      you picked a fix because it sounded impressive. -->
@@ -366,15 +392,51 @@ claim I made about my own code, not something my criteria caught.
 <!-- Same format, same five criteria, three runs each.
      `python run_eval.py --label after` -->
 
+### Run Log — After
+
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 |---|---|---|---|---|---|
-| 1. Retrieved chunk contains the answer | 4 of 5 |  |  |  |  |
-| 2. Every answer names a source | 5 of 5 |  |  |  |  |
-| 3. Gate stops out-of-corpus questions | 4 of 5 |  |  |  |  |
-| 4. | | | | | |
-| 5. | | | | | |
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. CHUNK_SIZE (300) exceeds longest document (554 chars) | 600 ≥ 554 | ✗ | ✗ | ✗ | **MISSED** (see note) |
+| 5. Correct source attribution on original/followup pairs | 4 of 5 | 5/5 (single pass) | 5/5 (single pass) | 5/5 (single pass) | MET |
+
+> **Criterion 4 note:** my original criterion literally names 600 as the
+> chosen size, tied to the 554-character maximum. Lowering `CHUNK_SIZE` to
+> 300 for this experiment technically breaks that specific criterion as
+> written — 300 is well below 554, so documents now do split. I'm treating
+> this as an expected, deliberate tradeoff of testing a second chunking
+> strategy, not a real regression: the original criterion was about
+> defending a *no-split* design choice, and this experiment intentionally
+> abandons that choice to test the alternative. See "Did it help?" below.
+>
+> **Criterion 5:** retested after the chunking change — still 5/5 correct across all 5 dining-hall pairs, no mismatches. Distances shifted (mostly down, e.g. Ridgeway 0.201 → 0.183, Pellew 0.311 → 0.171), consistent with the same pattern seen elsewhere: smaller chunks generally pull tighter, more targeted matches. Kestrel Commons is the one exception worth noting — its distance actually went up slightly (0.342 → 0.381) and its retrieved-sources list shrank to only 3 candidates instead of 5, though the correct pair was still on top.
 
 **Did it help?**
+
+Yes, on the specific thing my diagnosis pointed at — but with a real,
+unanticipated cost.
+
+My weakest question before the change (the campus shuttle, at distance
+0.425 — the closest of my five to the 0.6 cutoff) improved to 0.1825, and
+its retrieved chunks stopped pulling in unrelated material (a stats
+workload doc, a dining hall doc) that had been crowding its top-5 before.
+Ridgeway Café improved similarly (0.2012 → 0.1828). Both are consistent
+with the diagnosis: smaller, more targeted chunks reduce dilution from
+loosely-related content.
+
+But my out-of-scope distances also dropped across the board — e.g. the
+diesel oil question went from 0.934 to 0.850, ibuprofen from 0.844 to
+0.787. No criterion actually flipped to MISSED on this axis (my narrowest
+gap is still 0.2715 to 0.787, comfortably either side of 0.6), but the
+gap between in-corpus and out-of-corpus distances visibly narrowed.
+Smaller chunks appear to make everything look somewhat more "relevant" to
+somewhat more questions, not just the ones I wanted to help. That's the
+real finding: this fix helped exactly where I diagnosed a problem, but it
+wasn't free, and a harder out-of-scope question or a slightly higher
+threshold could have exposed that cost more clearly than my current test
+questions do.
 
 <!-- Say plainly whether it did, and how you know. If it made things worse,
      say that — a change that backfired, honestly reported, earns full credit
@@ -393,9 +455,57 @@ claim I made about my own code, not something my criteria caught.
 
      Milestone 5. -->
 
+**Criterion 4** (CHUNK_SIZE ≥ longest document) is the one criterion that
+came out MISSED after my improvement — and by design, not by accident. My
+original target named 600 specifically because it sat above my longest
+document (554 characters). Testing a second chunking strategy required
+dropping `CHUNK_SIZE` to 300, which breaks that specific target on paper.
+
+I'm not fixing this, because fixing it would mean reverting the actual
+improvement (the smaller chunks that measurably helped my shuttle and
+Ridgeway Café questions in the "Did it help?" section above). The two
+things — "criterion 4 as originally written" and "a smaller, split-testing
+chunk size" — are mutually exclusive by construction, and I picked the
+latter deliberately once I saw what it would cost. If I kept going, the
+next step would be finding a `CHUNK_SIZE` that both triggers real splitting
+on a few documents *and* stays defensible under some other stated
+criterion (e.g. "no chunk falls below X characters" instead of "no
+document ever splits") — but that's a new criterion I haven't written or
+tested, not a fix to the old one, and I ran out of time to do both
+properly in this unit.
+
+Separately, **criterion 3's margin narrowed** (out-of-scope distances
+dropped, e.g. diesel oil 0.934 → 0.850) without actually failing. I
+haven't tested a genuinely borderline out-of-scope question — one that's
+topically adjacent to campus_life but not actually covered — so I don't
+know how much further that gap could narrow before criterion 3 would
+start failing for real. I flagged this as a diagnosis in Milestone 3 but
+didn't build the harder test question to check it, for the same reason:
+time.
+
 ## What I'd Do Differently
 
 <!-- Knowing what you know now — which of your five criteria would you write
      differently, and why?
 
      Milestone 5. -->
+I'd rewrite **criterion 4**. As written, it was true by construction — I
+picked 600 specifically because I already knew 554 was the max, so it was
+never at real risk of failing on its own terms. A better version would
+have separated the two things I actually cared about: (1) "no chunk falls
+below N characters" (a real completeness/fragment risk, independent of
+whatever CHUNK_SIZE ends up being) and (2) "CHUNK_SIZE is documented and
+justified against the corpus's actual document lengths" (a config sanity
+check, not a pass/fail test). Splitting these would have let me change
+CHUNK_SIZE for the Milestone 4 experiment without automatically breaking
+the criterion — right now, "chunking got better" and "criterion 4 got
+worse" are recording the same event from two sides, which makes the
+run log table look like a regression when it isn't really one.
+
+I'd also tighten **criterion 3** to include at least one deliberately
+borderline out-of-scope question, rather than five confidently unrelated
+ones. My current five (Mongolia, diesel engines, the World Cup, ibuprofen,
+Rust) are all obviously outside campus_life, and the gate refusing them
+tells me less than I originally thought — a topic that's plausible for a
+campus corpus but still genuinely uncovered would be a much harder and
+more informative test.
