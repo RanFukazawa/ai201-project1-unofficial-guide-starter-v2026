@@ -316,6 +316,41 @@ Commit this file. It's the evidence the run actually happened.
      low, and which one you'd tighten and to what.
 
      Milestone 3. -->
+I missed nothing — all five criteria came back MET in the Run Log above.
+
+That said, I don't think this means the system is excellent so much as that
+a couple of my targets didn't get a genuinely hard test:
+
+- **Criterion 3** (gate stops out-of-corpus questions) was never close. My
+  out-of-scope distances (0.825–0.934) sat far above my 0.6 cutoff, with no
+  question anywhere near the boundary. This tells me the gate works on
+  obviously-unrelated questions, but I have no evidence about borderline
+  ones — a question that's tangentially related to my corpus but still not
+  answerable might behave very differently, and I haven't tested that case
+  at all.
+- **Criterion 4** (CHUNK_SIZE ≥ longest document) is true by construction —
+  I set 600 specifically because I already knew my longest document was 554.
+  It was never at risk of failing, since I picked the target after seeing
+  the number it needed to beat. It's a legitimate criterion (it documents a
+  real, deliberate design decision), but it isn't really a *test* of
+  anything uncertain.
+
+If I tightened one, it would be **criterion 3**. Instead of "the gate
+refuses obviously out-of-scope questions," I'd rewrite it to specifically
+target borderline cases — e.g., a question about a topic adjacent to my
+corpus but not actually covered (like "what does the university's
+diversity policy say," which sounds plausible for a campus_life corpus but
+isn't in my 88 documents) — and set the target lower, like 3 of 5, since I
+genuinely don't know how the gate performs there.
+
+Separately, my Unit 1 feedback caught a real gap that isn't reflected in any
+criterion: `split_documents`'s paragraph-overflow fallback and
+`CHUNK_OVERLAP` are both untested and, on inspection, don't actually work as
+documented — my README claimed a long paragraph would get a character-level
+fallback split, but the code just emits it as one oversized chunk, and
+overlap is never read. This didn't cause a miss because no document in my
+corpus is long enough to trigger that path, but it's a real, unverified
+claim I made about my own code, not something my criteria caught.
 
 ## The Improvement
 
