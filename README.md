@@ -291,11 +291,11 @@ Commit this file. It's the evidence the run actually happened.
 
 | # | Criterion | Verdict | How I decided |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | Retrieved chunks contain the answer (4 of 5) | MET | All 3 runs came back 5/5, which clears the 4-of-5 bar with room to spare — no run dropped below target. |
+| 2 | Every answer names a source (5 of 5) | MET | All 3 runs were 5/5 exactly, matching the target with no slack — every answer cited a file. |
+| 3 | Gate stops out-of-corpus questions (5 of 5) | MET | Single deterministic pass refused all 5 out-of-scope questions; distances (0.825–0.934) were nowhere near the 0.6 cutoff, so this wasn't a close call. |
+| 4 | CHUNK_SIZE (600) exceeds longest document (554 chars) | MET | Static fact, not a per-run measurement: 600 ≥ 554 holds by construction and doesn't change between runs. |
+| 5 | Correct source attribution on original/followup pairs (4 of 5) | MET | Tested all 5 available pairs (not just 4) and got 5/5 correct citations in a single pass — exceeds target, though I only ran it once rather than three times. |
 
 ## Diagnoses
 
